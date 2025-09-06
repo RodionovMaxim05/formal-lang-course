@@ -17,9 +17,7 @@ def test_get_graph_metadata_for_existing_graph():
 
     actual_md = get_graph_metadata("bzip")
 
-    assert actual_md.node_count == bzip_md.node_count
-    assert actual_md.edge_count == bzip_md.edge_count
-    assert actual_md.edge_labels == bzip_md.edge_labels
+    assert actual_md == bzip_md
 
 
 def test_get_graph_metadata_for_nonexistent_graph():
