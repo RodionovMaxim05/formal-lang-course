@@ -30,7 +30,9 @@ def test_graph_to_nfa_extreme_cases(
     assert nfa.start_states == start_states
     assert nfa.final_states == final_states
 
+
 # Testing with graphs using the functionality implemented in Task 1
+
 
 def test_existing_graph_to_nfa():
     graph_name = "bzip"
