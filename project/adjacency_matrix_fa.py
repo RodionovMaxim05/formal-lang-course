@@ -24,7 +24,7 @@ class AdjacencyMatrixFA:
         else:
             self._init_from_automaton(automaton)
 
-    def _init_empty(self):
+    def _init_empty(self) -> None:
         self.states_count = 0
         self.alphabet = set()
         self.transition_matrices = {}
@@ -162,6 +162,6 @@ def tensor_based_rpq(
                             State((graph_final.value, regex_final.value))
                         ],
                     ]:
-                        result.add((graph_start, graph_final))
+                        result.add((graph_start.value, graph_final.value))
 
     return result
