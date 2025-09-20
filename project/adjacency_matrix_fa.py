@@ -70,6 +70,8 @@ class AdjacencyMatrixFA:
                 return False
 
             cur_vector = cur_vector @ self.transition_matrices[symbol]
+            if cur_vector.count_nonzero() == 0:
+                return False
 
         for final_idx in self.final_idxs:
             if cur_vector[0, final_idx]:
@@ -84,10 +86,10 @@ class AdjacencyMatrixFA:
             matrix_tc += self.transition_matrices[symbol]
 
         for _ in range(self.states_count):
-            prev_count = matrix_tc.nnz
+            prev_count = matrix_tc.count_nonzero()
             matrix_tc = matrix_tc @ matrix_tc
 
-            if prev_count == matrix_tc.nnz:
+            if prev_count == matrix_tc.count_nonzero():
                 return matrix_tc
 
         return matrix_tc
