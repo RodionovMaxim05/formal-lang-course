@@ -1,24 +1,37 @@
 from typing import Iterable, Set, Tuple, Dict
 from scipy import sparse
+from scipy.sparse import csr_array, csc_array, dok_array, lil_array
 from pyformlang.finite_automaton import (
     NondeterministicFiniteAutomaton,
     Symbol,
     State,
 )
 from networkx import MultiDiGraph
+from typing import TypeVar, Dict, Union
 
 from project.automata_builder import regex_to_dfa, graph_to_nfa
 
+MatrixType = TypeVar(
+    "MatrixType", bound=Union[csr_array, csc_array, dok_array, lil_array]
+)
+
 
 class AdjacencyMatrixFA:
+    matrix_type: MatrixType
     states_count: int
     alphabet: Set[Symbol]
     state_to_idx: Dict[State, int]
     start_idxs: Set[int]
     final_idxs: Set[int]
-    transition_matrices: Dict[Symbol, sparse.csr_array]
+    transition_matrices: Dict[Symbol, MatrixType]
 
-    def __init__(self, automaton: NondeterministicFiniteAutomaton = None):
+    def __init__(
+        self,
+        automaton: NondeterministicFiniteAutomaton = None,
+        matrix_type: MatrixType = csr_array,
+    ):
+        self.matrix_type = matrix_type
+
         if automaton is None:
             self._init_empty()
         else:
@@ -55,7 +68,18 @@ class AdjacencyMatrixFA:
                 ] = True
 
         for symbol in self.alphabet:
-            self.transition_matrices[symbol] = self.transition_matrices[symbol].tocsr()
+            self.transition_matrices[symbol] = self.convert_to_target_type(
+                self.transition_matrices[symbol]
+            )
+
+    def convert_to_target_type(self, matrix):
+        target_format = self.matrix_type.__name__[:-6]
+        method_name = f"to{target_format}"
+
+        if hasattr(matrix, method_name):
+            return getattr(matrix, method_name)()
+        else:
+            raise ValueError(f"Unknown attribute: {method_name}")
 
     def accepts(self, word: Iterable[Symbol]) -> bool:
         cur_vector = sparse.lil_array((1, self.states_count), dtype=bool)
@@ -63,7 +87,7 @@ class AdjacencyMatrixFA:
         for start_idx in self.start_idxs:
             cur_vector[0, start_idx] = True
 
-        cur_vector = cur_vector.tocsr()
+        cur_vector = self.convert_to_target_type(cur_vector)
 
         for symbol in word:
             if symbol not in self.alphabet:
@@ -79,8 +103,10 @@ class AdjacencyMatrixFA:
 
         return False
 
-    def transitive_closure(self) -> sparse.csr_array:
-        matrix_tc = sparse.eye_array(self.states_count, dtype=bool, format="csr")
+    def transitive_closure(self) -> MatrixType:
+        matrix_tc = sparse.eye_array(
+            self.states_count, dtype=bool, format=f"{self.matrix_type.__name__[:-6]}"
+        )
 
         for symbol in self.alphabet:
             matrix_tc += self.transition_matrices[symbol]
@@ -117,7 +143,7 @@ def intersect_automata(
         intersect.transition_matrices[symbol] = sparse.kron(
             automaton1.transition_matrices[symbol],
             automaton2.transition_matrices[symbol],
-            format="csr",
+            format=f"{automaton1.matrix_type.__name__[:-6]}",
         )
 
     for state1 in automaton1.state_to_idx.keys():
@@ -139,13 +165,17 @@ def intersect_automata(
 
 
 def tensor_based_rpq(
-    regex: str, graph: MultiDiGraph, start_nodes: Set[int], final_nodes: Set[int]
+    regex: str,
+    graph: MultiDiGraph,
+    start_nodes: Set[int],
+    final_nodes: Set[int],
+    matrix_type: MatrixType = csr_array,
 ) -> Set[Tuple[int, int]]:
     graph_nfa = graph_to_nfa(graph, start_nodes, final_nodes)
-    graph_mfa = AdjacencyMatrixFA(graph_nfa)
+    graph_mfa = AdjacencyMatrixFA(graph_nfa, matrix_type)
 
     regex_dfa = regex_to_dfa(regex)
-    regex_mfa = AdjacencyMatrixFA(regex_dfa)
+    regex_mfa = AdjacencyMatrixFA(regex_dfa, matrix_type)
 
     inter_mfa = intersect_automata(graph_mfa, regex_mfa)
     inter_tc = inter_mfa.transitive_closure()
