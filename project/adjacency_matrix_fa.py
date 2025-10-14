@@ -1,4 +1,4 @@
-from typing import Iterable, Set, Tuple, Dict
+from typing import Iterable, Set, Tuple, TypeVar, Dict, Union
 from scipy import sparse
 from scipy.sparse import csr_array, csc_array, dok_array, lil_array
 from pyformlang.finite_automaton import (
@@ -7,7 +7,6 @@ from pyformlang.finite_automaton import (
     State,
 )
 from networkx import MultiDiGraph
-from typing import TypeVar, Dict, Union
 
 from project.automata_builder import regex_to_dfa, graph_to_nfa
 
