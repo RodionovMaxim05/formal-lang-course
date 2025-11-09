@@ -17,7 +17,7 @@ from cfpq_concrete_cases import CASES_CFPQ, CaseCFPQ
 try:
     from project.cfpq_hellings import hellings_based_cfpq
     from project.cfpq_matrix import matrix_based_cfpq
-    from project.task8 import tensor_based_cfpq, cfg_to_rsm, ebnf_to_rsm
+    from project.cfpq_tensor import tensor_based_cfpq, cfg_to_rsm, ebnf_to_rsm
 except ImportError:
     pytestmark = pytest.mark.skip("Task 8 is not ready to test!")
 
