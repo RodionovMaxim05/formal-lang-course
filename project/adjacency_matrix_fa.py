@@ -181,18 +181,15 @@ def tensor_based_rpq(
 
     result = set()
 
-    for graph_start in graph_nfa.start_states:
-        for graph_final in graph_nfa.final_states:
-            for regex_start in regex_dfa.start_states:
-                for regex_final in regex_dfa.final_states:
-                    if inter_tc[
-                        inter_mfa.state_to_idx[
-                            State((graph_start.value, regex_start.value))
-                        ],
-                        inter_mfa.state_to_idx[
-                            State((graph_final.value, regex_final.value))
-                        ],
-                    ]:
-                        result.add((graph_start.value, graph_final.value))
+    inter_mfa_idx_to_state = {v: k for k, v in inter_mfa.state_to_idx.items()}
+
+    for start, final in zip(*inter_tc.nonzero()):
+        if start in inter_mfa.start_idxs and final in inter_mfa.final_idxs:
+            result.add(
+                (
+                    inter_mfa_idx_to_state[start].value[0],
+                    inter_mfa_idx_to_state[final].value[0],
+                )
+            )
 
     return result
