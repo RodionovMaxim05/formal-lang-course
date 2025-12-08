@@ -1,22 +1,28 @@
-from scipy import sparse
 from networkx import MultiDiGraph
 
 from project.automata_builder import regex_to_dfa, graph_to_nfa
-from project.adjacency_matrix_fa import AdjacencyMatrixFA
+from project.adjacency_matrix_fa import AdjacencyMatrixFA, MatrixType
+from scipy.sparse import csr_array
 
 
 def ms_bfs_based_rpq(
-    regex: str, graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int]
+    regex: str,
+    graph: MultiDiGraph,
+    start_nodes: set[int],
+    final_nodes: set[int],
+    matrix_type: MatrixType = csr_array,
 ) -> set[tuple[int, int]]:
-    graph_mfa = AdjacencyMatrixFA(graph_to_nfa(graph, start_nodes, final_nodes))
-    regex_mfa = AdjacencyMatrixFA(regex_to_dfa(regex))
+    graph_mfa = AdjacencyMatrixFA(
+        graph_to_nfa(graph, start_nodes, final_nodes), matrix_type
+    )
+    regex_mfa = AdjacencyMatrixFA(regex_to_dfa(regex), matrix_type)
 
     common_alphabet = graph_mfa.alphabet.intersection(regex_mfa.alphabet)
 
     fronts = []
     reachable = []
     for graph_start in graph_mfa.start_idxs:
-        front = sparse.csr_array(
+        front = matrix_type(
             (graph_mfa.states_count, regex_mfa.states_count), dtype=bool
         )
 
@@ -35,7 +41,7 @@ def ms_bfs_based_rpq(
             if front.count_nonzero() == 0:
                 continue
 
-            new_front = sparse.csr_array(front.shape, dtype=bool)
+            new_front = matrix_type(front.shape, dtype=bool)
             for symbol in common_alphabet:
                 new_front += (
                     graph_mfa_trans_matrices_transposed[symbol]
